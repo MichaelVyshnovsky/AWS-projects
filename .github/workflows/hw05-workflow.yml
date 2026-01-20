@@ -1,0 +1,65 @@
+name: Deploy AWS Lambda Functions
+
+on:
+  push:
+    paths:
+      - 'hw05/**'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pylint
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+      - name: Run test
+        run: python3 hw05/test.py
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+      
+      - name: Deploy Lambda Functions
+        run: |
+          for FUNCTION_NAME in "Hw05-Add-object-to-a-bucket" "Hw05-Delete-object-in-bucket" "Hw05-list-buckets" "Hw05-List-objects-in-bucket"
+          do
+            FUNCTION_PATH="hw05/Lambda Function/$FUNCTION_NAME"  # Adjusted path
+            if [ -d "$FUNCTION_PATH" ]; then
+              zip -r "$FUNCTION_NAME.zip" "$FUNCTION_PATH"/*
+              aws lambda update-function-code --function-name "$FUNCTION_NAME" --zip-file fileb://"$FUNCTION_NAME.zip"
+            else
+              echo "Warning: Directory $FUNCTION_PATH not found. Skipping."
+            fi
+          done  

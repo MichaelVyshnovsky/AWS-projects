@@ -1,0 +1,12 @@
+# Ignore node modules and Python cache
+node_modules/
+__pycache__/
+
+# Ignore hidden folders
+.vscode/
+.pytest_cache/
+.venv/
+HW_docs/
+test/
+test2/
+/hw09-webapp

@@ -1,0 +1,2 @@
+Hello TA,
+While working on this project i had my workflows on git, and my code locally, this lead to issues where was an error with merge and branches so any attempt to merge resulted in failure not letting me merge my two brnaches, so i deleted the repo and started with proper merging and push/pull requests thats why all my code was already written by the first commit

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 Image Viewer NEW</title>
+    <script>
+        function fetchFileList() {
+            fetch('/list_objects')
+                .then(response => response.json())
+                .then(data => {
+                    let tableBody = document.getElementById('fileTableBody');
+                    tableBody.innerHTML = ''; // Clear existing rows
+
+                    data.forEach(file => {
+                        let row = document.createElement('tr');
+
+                        let nameCell = document.createElement('td');
+                        let link = document.createElement('button');
+                        link.textContent = file.Name;
+                        link.onclick = function() {
+                            fetchImage(file.Name);
+                        };
+                        nameCell.appendChild(link);
+
+                        let sizeCell = document.createElement('td');
+                        sizeCell.textContent = file.Size;
+
+                        let dateCell = document.createElement('td');
+                        dateCell.textContent = file.LastModified;
+
+                        row.appendChild(nameCell);
+                        row.appendChild(sizeCell);
+                        row.appendChild(dateCell);
+
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching file list:', error));
+        }
+
+        function fetchImage(fileName) {
+            document.getElementById("imageDisplay").src = "/get_thumbnail?obj=" + fileName;
+        }
+
+        function uploadFile() {
+            let fileInput = document.getElementById('fileInput');
+            let file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // alert(data.message);
+                fetchFileList(); // Refresh the list after upload
+            })
+            .catch(error => console.error('Error uploading file:', error));
+        }
+
+        window.onload = fetchFileList; // Load files on page load
+    </script>
+</head>
+<body>
+    <h1>S3 Image Viewer</h1>
+
+    <h2>Upload a new file</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+
+    <h2>List of Files</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Object Name</th>
+                <th>Size</th>
+                <th>Last Modified</th>
+            </tr>
+        </thead>
+        <tbody id="fileTableBody">
+        </tbody>
+    </table>
+
+    <h2>Selected Image</h2>
+    <img id="imageDisplay" src="" width="500">
+
+</body>
+</html>
